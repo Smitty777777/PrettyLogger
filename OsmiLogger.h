@@ -37,7 +37,7 @@ enum class Level : std::uint8_t {
 
 namespace logger_detail {
 
-inline const char* level_str(Level l) noexcept {
+inline const char* levelString(Level l) noexcept {
     switch (l) {
         case Level::TRACE: return "TRACE";
         case Level::DEBUG: return "DEBUG";
@@ -49,7 +49,7 @@ inline const char* level_str(Level l) noexcept {
     }
 }
 
-inline const char* level_color(Level l) noexcept {
+inline const char* levelColor(Level l) noexcept {
     switch (l) {
         case Level::TRACE: return "\033[36m";
         case Level::DEBUG: return "\033[36m";
@@ -61,7 +61,7 @@ inline const char* level_color(Level l) noexcept {
     }
 }
 
-inline std::string make_timestamp() {
+inline std::string makeTimestamp() {
     using namespace std::chrono;
     const auto now  = system_clock::now();
     const auto ns = duration_cast<nanoseconds>(now.time_since_epoch()).count();
@@ -86,17 +86,17 @@ inline std::string make_timestamp() {
 
 
 
-inline void format_into(std::ostringstream& oss, const char* fmt) {
+inline void format(std::ostringstream& oss, const char* fmt) {
     oss << fmt;   // no args left
 }
 
 template <typename T, typename... Rest>
-inline void format_into(std::ostringstream& oss, const char* fmt,
+inline void format(std::ostringstream& oss, const char* fmt,
                         T&& first, Rest&&... rest) {
     while (*fmt) {
         if (fmt[0] == '{' && fmt[1] == '}') {
             oss << std::forward<T>(first);
-            format_into(oss, fmt + 2, std::forward<Rest>(rest)...);
+            format(oss, fmt + 2, std::forward<Rest>(rest)...);
             return;
         }
         oss << *fmt++;
@@ -199,7 +199,7 @@ public:
         if (worker_.joinable()) worker_.join();
         //drain buffer
         logger_detail::LogEntry e;
-        while (buffer_->pop(e, false)) write_entry(e);
+        while (buffer_->pop(e, false)) writeEntry(e);
     }
 
     //ro3
@@ -212,7 +212,7 @@ public:
         if (level < min_level_ || min_level_ == Level::OFF) return;
 
         logger_detail::LogEntry e;
-        e.timestamp = logger_detail::make_timestamp();
+        e.timestamp = logger_detail::makeTimestamp();
         e.level = level;
         e.message = logger_detail::format(fmt, std::forward<Args>(args)...);
         e.thread_id = logger_detail::current_thread_id();
@@ -230,9 +230,9 @@ public:
     void error(const char* msg) { log(Level::ERROR, msg); }
     void fatal(const char* msg) { log(Level::FATAL, msg); }
 
-    void set_level(Level l) noexcept { min_level_ = l; }
-    Level get_level() const noexcept { return min_level_; }
-    std::uint64_t dropped_count() const noexcept { return dropped_.load(); }
+    void setLevel(Level l) noexcept { min_level_ = l; }
+    Level getLevel() const noexcept { return min_level_; }
+    std::uint64_t droppedCount() const noexcept { return dropped_.load(); }
 
 
     void flush() {
@@ -252,17 +252,17 @@ private:
         logger_detail::LogEntry e;
         while (!buffer_->stopping()) {
             if (buffer_->pop(e, true))
-                write_entry(e);
+                writeEntry(e);
         }
         while (buffer_->pop(e, false))
-            write_entry(e);
+            writeEntry(e);
     }
 
-    void write_entry(const logger_detail::LogEntry& e) {
+    void writeEntry(const logger_detail::LogEntry& e) {
 
         std::ostringstream line;
         line << '[' << e.timestamp << ']' << " [0sm1L0gg3r ^_^] "
-             << " [" << logger_detail::level_str(e.level) << ']'
+             << " [" << logger_detail::levelString(e.level) << ']'
              << " [tid:" << std::hex << std::setw(8) << std::setfill('0')
              << e.thread_id << std::dec << "] "
              << e.message << '\n';
@@ -273,7 +273,7 @@ private:
             file_ << plain;
 
         if (color_stderr_) {
-            std::cerr << logger_detail::level_color(e.level)
+            std::cerr << logger_detail::levelColor(e.level)
                       << plain
                       << "\033[0m";
         } else {
