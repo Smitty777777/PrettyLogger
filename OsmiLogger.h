@@ -202,7 +202,6 @@ public:
         while (buffer_->pop(e, false)) writeEntry(e);
     }
 
-    //ro3
     OsmiLogger(const OsmiLogger&) = delete;
     OsmiLogger& operator=(const OsmiLogger&) = delete;
 
